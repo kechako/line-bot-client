@@ -2,7 +2,9 @@ package line
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/pkg/errors"
 )
@@ -27,6 +29,10 @@ const (
 
 const (
 	ToChannel = 1383378250
+)
+
+const (
+	ContentGetUrl = "https://trialbot-api.line.me/v1/bot/message/%s/content"
 )
 
 type Request struct {
@@ -98,4 +104,19 @@ func ParseRequest(r io.Reader) (*Request, error) {
 	}
 
 	return req, nil
+}
+
+func (m *Message) GetContent(client *http.Client) (*http.Response, error) {
+	url := fmt.Sprintf(ContentGetUrl, m.Id)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can not create a new request")
+	}
+
+	req.Header.Set("X-Line-ChannelID", LineChannelID)
+	req.Header.Set("X-Line-ChannelSecret", LineChannelSecret)
+	req.Header.Set("X-Line-Trusted-User-With-ACL", MID)
+
+	return client.Do(req)
 }
